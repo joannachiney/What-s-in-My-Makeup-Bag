@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>What's in My Makeup Bag?</title>
+  <style>
+    body {
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      text-align: center;
+      background: linear-gradient(to bottom right, #ffc0cb, #ffe4e1);
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      color: #d63384;
+      margin-top: 30px;
+    }
+    #game {
+      margin: 20px auto;
+      max-width: 900px;
+    }
+    #bag {
+      width: 150px;
+      height: 150px;
+      background-image: url('https://via.placeholder.com/150x150.png?text=Makeup+Bag');
+      background-size: cover;
+      border-radius: 15px;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.2s;
+    }
+    #bag.open {
+      transform: rotateX(90deg);
+    }
+    .item {
+      display: inline-block;
+      width: 100px;
+      height: 100px;
+      margin: 10px;
+      border: 3px solid #fff;
+      border-radius: 15px;
+      background-size: cover;
+      background-position: center;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .item:hover {
+      transform: scale(1.05);
+    }
+    .hidden {
+      display: none;
+    }
+    #message {
+      font-size: 22px;
+      color: #d63384;
+      margin: 20px;
+    }
+    #startButton {
+      padding: 12px 24px;
+      font-size: 20px;
+      background-color: #ff69b4;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    #startButton:hover {
+      background-color: #ff85c1;
+    }
+  </style>
+</head>
+<body>
+  <h1>What's in My Makeup Bag?</h1>
+  <div id="game">
+    <div id="bag"></div>
+    <div id="makeupBag" class="hidden"></div>
+    <div id="choices" class="hidden"></div>
+    <div id="message"></div>
+    <button id="startButton">Start Game</button>
+  </div>
+
+  <audio id="correctSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_c2fd366c08.mp3"></audio>
+  <audio id="wrongSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_8c23ec5f02.mp3"></audio>
+
+  <script>
+    const items = [
+      {name: 'Blush', image: 'https://via.placeholder.com/100x100.png?text=Blush'},
+      {name: 'Mascara', image: 'https://via.placeholder.com/100x100.png?text=Mascara'},
+      {name: 'Lipstick', image: 'https://via.placeholder.com/100x100.png?text=Lipstick'},
+      {name: 'Foundation', image: 'https://via.placeholder.com/100x100.png?text=Foundation'},
+      {name: 'Eyeliner', image: 'https://via.placeholder.com/100x100.png?text=Eyeliner'},
+      {name: 'Powder', image: 'https://via.placeholder.com/100x100.png?text=Powder'},
+      {name: 'Highlighter', image: 'https://via.placeholder.com/100x100.png?text=Highlighter'},
+      {name: 'Eyeshadow', image: 'https://via.placeholder.com/100x100.png?text=Eyeshadow'},
+      {name: 'Lip Gloss', image: 'https://via.placeholder.com/100x100.png?text=Lip+Gloss'},
+      {name: 'Beauty Blender', image: 'https://via.placeholder.com/100x100.png?text=Beauty+Blender'}
+    ];
+
+    let level = 1;
+    let maxLevel = 20;
+    let bagItems = [];
+    let correctSelections = 0;
+
+    const startButton = document.getElementById('startButton');
+    const makeupBag = document.getElementById('makeupBag');
+    const choices = document.getElementById('choices');
+    const message = document.getElementById('message');
+    const correctSound = document.getElementById('correctSound');
+    const wrongSound = document.getElementById('wrongSound');
+    const bag = document.getElementById('bag');
+
+    function shuffle(array) {
+      return array.sort(() => Math.random() - 0.5);
+    }
+
+    function showBagItems() {
+      makeupBag.innerHTML = '';
+      makeupBag.classList.remove('hidden');
+      bagItems.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.style.backgroundImage = `url(${item.image})`;
+        makeupBag.appendChild(div);
+      });
+
+      setTimeout(() => {
+        makeupBag.classList.add('hidden');
+        showChoices();
+      }, Math.max(2000, 4000 - level * 100));
+    }
+
+    function showChoices() {
+      choices.innerHTML = '';
+      choices.classList.remove('hidden');
+      message.textContent = `Which items were in the bag? (Level ${level})`;
+
+      const allItems = shuffle([...items]);
+      const selectedItems = shuffle([...bagItems, ...allItems].slice(0, 8 + level));
+
+      selectedItems.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.style.backgroundImage = `url(${item.image})`;
+        div.onclick = () => handleSelection(div, item.name);
+        div.setAttribute('data-name', item.name);
+        choices.appendChild(div);
+      });
+    }
+
+    function handleSelection(div, name) {
+      if (bagItems.find(item => item.name === name)) {
+        if (!div.classList.contains('selected')) {
+          div.style.borderColor = 'limegreen';
+          div.classList.add('selected');
+          correctSound.play();
+          correctSelections++;
+          if (correctSelections === bagItems.length) {
+            if (level >= maxLevel) {
+              message.textContent = '🎉 You completed all levels! You have a fabulous memory!';
+              startButton.textContent = 'Play Again';
+              startButton.style.display = 'inline-block';
+              return;
+            }
+            message.textContent = 'Correct! Next level...';
+            setTimeout(startGame, 2000);
+          }
+        }
+      } else {
+        div.style.borderColor = 'red';
+        wrongSound.play();
+        message.textContent = 'Oops! Try again.';
+      }
+    }
+
+    function startGame() {
+      correctSelections = 0;
+      choices.classList.add('hidden');
+      message.textContent = '';
+      bagItems = shuffle([...items]).slice(0, 2 + level);
+      level++;
+      showBagItems();
+    }
+
+    bag.onclick = () => {
+      bag.classList.add('open');
+      setTimeout(() => {
+        showBagItems();
+      }, 1000);
+    };
+
+    startButton.onclick = () => {
+      level = 1;
+      startButton.style.display = 'none';
+      startGame();
+    };
+  </script>
+</body>
+</html>
